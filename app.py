@@ -147,15 +147,39 @@ def create_gradio_interface(app):
             
             ## Course Project: Computer Vision-Based Fashion Recognition
             
-            Upload an image to analyze fashion elements and find similar items or budget-friendly alternatives.
+            Upload an image or click on an example to analyze fashion elements and find similar items or budget-friendly alternatives.
             This tool demonstrates multimodal AI for fashion analysis using Llama 3.2 Vision Instruct model.
             """
         )
         
         with gr.Row():
             with gr.Column(scale=1):
+                # Image input section
                 image_input = gr.Image(type="pil", label="Upload Fashion Image")
                 
+                # Example images section
+                gr.Markdown("### Example Images")
+                with gr.Row():
+                    example1 = gr.Image(
+                        value="examples/casual_outfit.jpg",
+                        label="Casual Outfit",
+                        show_label=True,
+                        elem_id="example1"
+                    )
+                    example2 = gr.Image(
+                        value="examples/formal_dress.jpg",
+                        label="Formal Dress",
+                        show_label=True,
+                        elem_id="example2"
+                    )
+                    example3 = gr.Image(
+                        value="examples/streetwear.jpg",
+                        label="Streetwear",
+                        show_label=True,
+                        elem_id="example3"
+                    )
+                
+                # Options section
                 with gr.Row():
                     include_alternatives = gr.Checkbox(
                         label="Include Shopping Alternatives", 
@@ -182,6 +206,23 @@ def create_gradio_interface(app):
             fn=lambda x: gr.update(visible=x),
             inputs=[include_alternatives],
             outputs=[alt_count]
+        )
+        
+        # Connect example images to the image input
+        example1.click(
+            fn=lambda x: x,
+            inputs=[example1],
+            outputs=[image_input]
+        )
+        example2.click(
+            fn=lambda x: x,
+            inputs=[example2],
+            outputs=[image_input]
+        )
+        example3.click(
+            fn=lambda x: x,
+            inputs=[example3],
+            outputs=[image_input]
         )
         
         # Connect the button to the process_image function
