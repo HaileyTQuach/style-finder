@@ -26,9 +26,18 @@ class StyleFinderApp:
         Args:
             dataset_path (str): Path to the dataset file
             serp_api_key (str, optional): SerpAPI key for product searches
+            
+        Raises:
+            FileNotFoundError: If the dataset file is not found
+            ValueError: If the dataset is empty or invalid
         """
         # Load the dataset
+        if not os.path.exists(dataset_path):
+            raise FileNotFoundError(f"Dataset file not found: {dataset_path}")
+            
         self.data = pd.read_pickle(dataset_path)
+        if self.data.empty:
+            raise ValueError("The loaded dataset is empty")
         
         # Initialize components
         self.image_processor = ImageProcessor(
@@ -200,13 +209,18 @@ def create_gradio_interface(app):
     return demo
 
 if __name__ == "__main__":
-    demo = create_gradio_interface()
-    # Launch the Gradio interface
-    # You can customize these parameters:
-    # - share=True creates a public link you can share with others
-    # - server_name and server_port set where the app runs
-    demo.launch(
-        server_name="127.0.0.1",  
-        server_port=5000,
-        share=True  # Set to False if you don't want to create a public link
-    )
+    try:
+        # Initialize the app with the dataset
+        app = StyleFinderApp("swift-style-embeddings.pkl")
+        
+        # Create the Gradio interface
+        demo = create_gradio_interface(app)
+        
+        # Launch the Gradio interface
+        demo.launch(
+            server_name="127.0.0.1",  
+            server_port=5000,
+            share=True  # Set to False if you don't want to create a public link
+        )
+    except Exception as e:
+        print(f"Error starting the application: {str(e)}")
