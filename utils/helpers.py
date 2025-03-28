@@ -29,9 +29,9 @@ def format_alternatives_response(user_response, alternatives, similarity_score, 
         str: Enhanced response with alternatives
     """
     if similarity_score >= threshold:
-        enhanced_response = user_response + "\n\n## Learning Activity: Budget-Friendly Alternatives\n\nAs part of your learning exercise, here are some more affordable options for each item:\n"
+        enhanced_response = user_response + "\n\n## Similar Items Found\n\nHere are some similar items we found:\n"
     else:
-        enhanced_response = user_response + "\n\n## Learning Activity: Similar Items from Market Research\n\nHere are some visually similar items we found through our market research process:\n"
+        enhanced_response = user_response + "\n\n## Similar Items Found\n\nHere are some visually similar items:\n"
     
     for item, alts in alternatives.items():
         enhanced_response += f"\n### {item}:\n"
@@ -39,10 +39,6 @@ def format_alternatives_response(user_response, alternatives, similarity_score, 
             for alt in alts:
                 enhanced_response += f"- {alt['title']} for {alt['price']} from {alt['source']} (Buy it here: {alt['link']})\n"
         else:
-            enhanced_response += "- No alternatives found in our database.\n"
-    
-    # Add educational context
-    enhanced_response += "\n\n## Course Reflection\n"
-    enhanced_response += "This exercise demonstrates how computer vision and API integration can be combined to create practical fashion technology applications. Consider how this approach could be applied to other domains or with different data sources."
+            enhanced_response += "- No alternatives found.\n"
     
     return enhanced_response
