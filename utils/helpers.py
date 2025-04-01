@@ -42,3 +42,16 @@ def format_alternatives_response(user_response, alternatives, similarity_score, 
             enhanced_response += "- No alternatives found.\n"
     
     return enhanced_response
+
+def process_response(response: str) -> str:
+    """
+    Process and escape problematic characters in the response.
+    
+    Args:
+        response (str): The original response text
+        
+    Returns:
+        str: Processed response with escaped characters
+    """
+    # Escape all $ signs for Markdown
+    return response.replace("$", "\\$")

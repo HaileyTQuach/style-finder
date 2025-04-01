@@ -11,7 +11,7 @@ from tempfile import NamedTemporaryFile
 from models.image_processor import ImageProcessor
 from models.llm_service import LlamaVisionService
 from services.search_service import SearchService
-from utils.helpers import get_all_items_for_image, format_alternatives_response
+from utils.helpers import get_all_items_for_image, format_alternatives_response, process_response
 import config
 
 class StyleFinderApp:
