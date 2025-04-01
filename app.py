@@ -145,10 +145,8 @@ def create_gradio_interface(app):
             """
             # Fashion Style Analyzer
             
-            ## Course Project: Computer Vision-Based Fashion Recognition
-            
-            Upload an image or click on an example to analyze fashion elements and find similar items or budget-friendly alternatives.
-            This tool demonstrates multimodal AI for fashion analysis using Llama 3.2 Vision Instruct model.
+            Upload an image or click on an example to analyze fashion elements and find similar items.
+            This tool uses AI to analyze and describe fashion elements in images.
             """
         )
         
@@ -234,16 +232,14 @@ def create_gradio_interface(app):
         
         gr.Markdown(
             """
-            ### About This Project
+            ### About This Tool
             
-            This application demonstrates how computer vision and natural language processing can be combined to analyze fashion elements in images. It uses:
+            This application uses advanced AI to analyze fashion elements in images:
             
-            - **Image Encoding**: Converts images into numerical vectors for comparison
+            - **Image Analysis**: Converts images into numerical vectors for comparison
             - **Similarity Matching**: Finds the closest match in a database of fashion items
-            - **Multimodal AI**: Uses Llama 3.2 Vision Instruct to analyze and describe fashion elements
-            - **API Integration**: Searches for similar items across the web
-            
-            *This project is part of a Coursera course on advanced computer vision applications*
+            - **AI Analysis**: Uses vision AI to analyze and describe fashion elements
+            - **Shopping Integration**: Searches for similar items across the web
             """
         )
     
