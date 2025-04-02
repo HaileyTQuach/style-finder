@@ -2,10 +2,15 @@
 Service for interacting with the Llama 3.2 Vision Instruct model.
 """
 
+import logging
 from ibm_watsonx_ai import Credentials
 from ibm_watsonx_ai import APIClient
 from ibm_watsonx_ai.foundation_models import ModelInference
 from ibm_watsonx_ai.foundation_models.schema import TextChatParameters
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 class LlamaVisionService:
     """
@@ -13,7 +18,7 @@ class LlamaVisionService:
     """
     
     def __init__(self, model_id, project_id, region="us-south", 
-                 temperature=0.2, top_p=0.6, api_key=None):
+                 temperature=0.2, top_p=0.6, api_key=None, max_tokens=800):
         """
         Initialize the service with the specified model and parameters.
         
@@ -24,6 +29,7 @@ class LlamaVisionService:
             temperature (float): Controls randomness in generation
             top_p (float): Nucleus sampling parameter
             api_key (str, optional): API key for authentication
+            max_tokens (int): Maximum tokens in the response
         """
         # Set up authentication credentials
         credentials = Credentials(
@@ -35,7 +41,8 @@ class LlamaVisionService:
         # Define parameters for the model's behavior
         params = TextChatParameters(
             temperature=temperature,
-            top_p=top_p
+            top_p=top_p,
+            max_tokens=max_tokens
         )
         
         # Initialize the model inference object
@@ -58,6 +65,8 @@ class LlamaVisionService:
             str: Model's response
         """
         try:
+            logger.info("Sending request to LLM with prompt length: %d", len(prompt))
+            
             # Create the messages object
             messages = [
                 {
@@ -80,9 +89,19 @@ class LlamaVisionService:
             # Send the request to the model
             response = self.model.chat(messages=messages)
             
-            # Return the model's response
-            return response['choices'][0]['message']['content']
+            # Extract and validate the response
+            content = response['choices'][0]['message']['content']
+            
+            logger.info("Received response with length: %d", len(content))
+            
+            # Check if response appears to be truncated
+            if len(content) >= 7900:  # Close to common model limits
+                logger.warning("Response may be truncated (length: %d)", len(content))
+            
+            return content
+            
         except Exception as e:
+            logger.error("Error generating response: %s", str(e))
             return f"Error generating response: {e}"
     
     def generate_fashion_response(self, user_image_base64, matched_row, all_items, 
@@ -100,44 +119,57 @@ class LlamaVisionService:
         Returns:
             str: Detailed fashion response
         """
-        # Generate a detailed list of items with prices and links
-        items_description = "\n".join(
-            f"- **{row['Item Name']}** (${row['Price']}): Buy it here: {row['Link']}"
-            for _, row in all_items.iterrows()
-        )
+        # Generate a simpler list of items with prices and links
+        items_list = []
+        for _, row in all_items.iterrows():
+            item_str = f"{row['Item Name']} (${row['Price']}): {row['Link']}"
+            items_list.append(item_str)
+        
+        # Join items with clear separators
+        items_description = "\n".join([f"- {item}" for item in items_list])
 
         if similarity_score >= threshold:
-            # Role-based prompt for an exact match
+            # Simplified prompt focused on professional fashion analysis
             assistant_prompt = (
-                f"You are a young and enthusiastic fashion expert who helps students learn about fashion analysis. "
-                f"The matched outfit features: {matched_row['Item Name']}.\n\n"
-                f"Matched outfit includes:\n{items_description}\n\n"
-                "Follow these steps in your response:\n"
-                "1. Introduce yourself briefly. Use an educational, engaging tone suited for students.\n"
-                "2. Describe each item as a definition first (list what it is, what color it is and what pattern it has), following this format:\n"
-                "   - Example: Versace 'Tweed Masculine Blazer' is a single-breasted wool-blend tweed blazer crafted in a micro windowpane pattern in red and black.\n"
-                "   - Format: **Item Name** is [definition].\n"
-                "3. After defining each item, include its detailed description, highlighting its type, material, pattern, and why it stands out.\n"
-                "4. Describe the outfit's overall style category and explain why (e.g., casual chic, formal elegance, street style).\n"
-                "5. Include a brief learning point about fashion analysis concepts used in this assessment.\n"
-                "6. Summarize all the items with their prices and links at the end.\n\n"
-                "Ensure your response is educational, clear, and structured for students to learn from!"
+                f"You're conducting a professional retail catalog analysis. "
+                f"This image shows standard clothing items available in department stores. "
+                f"Focus exclusively on professional fashion analysis for a clothing retailer. "
+                f"ITEM DETAILS (always include this section in your response):\n{items_description}\n\n"
+                "Please:\n"
+                "1. Identify and describe the clothing items objectively (colors, patterns, materials)\n"
+                "2. Categorize the overall style (business, casual, etc.)\n"
+                "3. Include the ITEM DETAILS section at the end\n\n"
+                "This is for a professional retail catalog. Use formal, clinical language."
             )
         else:
-            # Role-based prompt for the closest match
+            # Similar approach for non-exact matches
             assistant_prompt = (
-                f"You are a fashion instructor helping students learn image analysis techniques.\n\n"
-                "Follow these steps in your response:\n"
-                "1. Use an educational tone suited for a course on fashion technology.\n"
-                "2. Explain that while we don't have this exact outfit in our database, this is a learning opportunity about image analysis.\n"
-                "3. Describe each item as a definition first (list what it is, what color it is and what pattern it has), following this format: \n"
-                "   - Example: Blazer is a single-breasted wool-blend tweed blazer in red and black with a micro windowpane pattern.\n"
-                "   - Format: **Item Name** is [definition].\n"
-                "4. Be thorough and include details about the type of item, its color, and any patterns or textures.\n"
-                "5. Include a short lesson on how AI models analyze fashion elements in images.\n"
-                "6. Conclude by saying: 'Next, we'll search for similar items online to demonstrate how to recreate this look.'\n\n"
-                "Make your response educational and structured for a classroom setting!"
+                f"You're conducting a professional retail catalog analysis. "
+                f"This image shows standard clothing items available in department stores. "
+                f"Focus exclusively on professional fashion analysis for a clothing retailer. "
+                f"SIMILAR ITEMS (always include this section in your response):\n{items_description}\n\n"
+                "Please:\n"
+                "1. Note these are similar but not exact items\n"
+                "2. Identify clothing elements objectively (colors, patterns, materials)\n" 
+                "3. Include the SIMILAR ITEMS section at the end\n\n"
+                "This is for a professional retail catalog. Use formal, clinical language."
             )
-
+        
         # Send the prompt to the model
-        return self.generate_response(user_image_base64, assistant_prompt)
+        response = self.generate_response(user_image_base64, assistant_prompt)
+        
+        # Check if response is incomplete
+        if len(response) < 100:
+            logger.info("Response appears incomplete, creating basic response")
+            # Create a basic response with the item details
+            section_header = "ITEM DETAILS:" if similarity_score >= threshold else "SIMILAR ITEMS:"
+            response = f"# Fashion Analysis\n\nThis outfit features a collection of carefully coordinated pieces.\n\n{section_header}\n{items_description}"
+        
+        # Ensure the items list is included - this is crucial
+        elif "ITEM DETAILS:" not in response and "SIMILAR ITEMS:" not in response:
+            logger.info("Item details section missing from response")
+            # Append to existing response
+            section_header = "ITEM DETAILS:" if similarity_score >= threshold else "SIMILAR ITEMS:"
+            response += f"\n\n{section_header}\n{items_description}"
+        
+        return response
