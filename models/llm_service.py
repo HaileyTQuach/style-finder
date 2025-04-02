@@ -18,7 +18,7 @@ class LlamaVisionService:
     """
     
     def __init__(self, model_id, project_id, region="us-south", 
-                 temperature=0.2, top_p=0.6, api_key=None, max_tokens=800):
+                 temperature=0.2, top_p=0.6, api_key=None, max_tokens=2000):
         """
         Initialize the service with the specified model and parameters.
         
